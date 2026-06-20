@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { searchDisease, type DiseaseResult } from "@/lib/targets-data"
+import { runAnalysisRequest, type Modality, type ScoreResponse } from "@/lib/api"
 
 export type Page = "search" | "results" | "reports" | "settings"
 
@@ -11,7 +11,7 @@ export interface SavedReport {
   disease: string
   generatedAt: string
   usedProprietaryData: boolean
-  result: DiseaseResult
+  result: ScoreResponse
 }
 
 interface AppState {
@@ -19,9 +19,11 @@ interface AppState {
   navigate: (page: Page) => void
 
   // Active analysis
-  result: DiseaseResult | null
+  result: ScoreResponse | null
   usedProprietaryData: boolean
-  runAnalysis: (query: string, file: File | null) => void
+  isAnalyzing: boolean
+  analysisError: string | null
+  runAnalysis: (query: string, file: File | null, modality: string) => void
 
   // Document
   documentReady: boolean
@@ -44,24 +46,40 @@ export function useApp() {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [page, setPage] = React.useState<Page>("search")
-  const [result, setResult] = React.useState<DiseaseResult | null>(null)
+  const [result, setResult] = React.useState<ScoreResponse | null>(null)
   const [usedProprietaryData, setUsedProprietaryData] = React.useState(false)
+  const [isAnalyzing, setIsAnalyzing] = React.useState(false)
+  const [analysisError, setAnalysisError] = React.useState<string | null>(null)
   const [documentReady, setDocumentReady] = React.useState(false)
   const [savedReports, setSavedReports] = React.useState<SavedReport[]>([])
-  const [activeReportId, setActiveReportId] = React.useState<string | null>(
-    null,
-  )
+  const [activeReportId, setActiveReportId] = React.useState<string | null>(null)
 
   const navigate = React.useCallback((next: Page) => setPage(next), [])
 
-  const runAnalysis = React.useCallback((query: string, file: File | null) => {
-    const next = searchDisease(query)
-    setResult(next)
-    setUsedProprietaryData(Boolean(file))
-    setDocumentReady(false)
-    setActiveReportId(null)
-    setPage("results")
-  }, [])
+  const runAnalysis = React.useCallback(
+    (query: string, file: File | null, modality: string) => {
+      setIsAnalyzing(true)
+      setAnalysisError(null)
+
+      runAnalysisRequest(query, modality as Modality, file)
+        .then((response) => {
+          setResult(response)
+          setUsedProprietaryData(Boolean(file))
+          setDocumentReady(false)
+          setActiveReportId(null)
+          setPage("results")
+        })
+        .catch((err) => {
+          setAnalysisError(
+            err instanceof Error ? err.message : "Something went wrong. Please try again.",
+          )
+        })
+        .finally(() => {
+          setIsAnalyzing(false)
+        })
+    },
+    [],
+  )
 
   const generateDocument = React.useCallback(() => {
     setDocumentReady(true)
@@ -72,15 +90,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const id = `rpt_${Date.now()}`
     const report: SavedReport = {
       id,
-      disease: result.disease,
+      disease: result.disease_label,
       generatedAt: new Date().toISOString(),
       usedProprietaryData,
       result,
     }
-    setSavedReports((prev) => {
-      // Avoid duplicate identical disease saved within the same session render
-      return [report, ...prev]
-    })
+    setSavedReports((prev) => [report, ...prev])
     setActiveReportId(id)
     return true
   }, [result, usedProprietaryData])
@@ -103,6 +118,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     navigate,
     result,
     usedProprietaryData,
+    isAnalyzing,
+    analysisError,
     runAnalysis,
     documentReady,
     generateDocument,
