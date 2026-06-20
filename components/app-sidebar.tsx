@@ -28,7 +28,12 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-sidebar-border border-b">
-        <div className="flex items-center gap-2 px-2 py-3">
+        <button
+          type="button"
+          onClick={() => navigate("search")}
+          aria-label="Go to search"
+          className="hover:bg-sidebar-accent flex items-center gap-2 rounded-lg px-2 py-3 text-left transition-colors"
+        >
           <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg">
             <Dna className="size-5" />
           </div>
@@ -40,7 +45,7 @@ export function AppSidebar() {
               Target Discovery
             </span>
           </div>
-        </div>
+        </button>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
