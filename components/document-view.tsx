@@ -20,6 +20,10 @@ export function DocumentView({ result }: { result: ScoreResponse }) {
 
   const top = [...result.targets].sort((a, b) => b.score - a.score).slice(0, 3)
   const topNames = top.map((t) => t.symbol)
+  // Every prioritized target that has at least one linked publication, ranked.
+  const targetsWithLiterature = [...result.targets]
+    .sort((a, b) => a.rank - b.rank)
+    .filter((t) => t.literature.length > 0)
   const avgTractability =
     result.targets.reduce((sum, t) => sum + t.tractability, 0) /
     Math.max(result.targets.length, 1)
@@ -142,34 +146,49 @@ export function DocumentView({ result }: { result: ScoreResponse }) {
               Supporting Literature
             </h3>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Key publications linking the top-ranked targets to{" "}
+              Key publications linking the prioritized targets to{" "}
               {result.disease_label}:
             </p>
-            <ul className="flex flex-col gap-3">
-              {top.flatMap((t) =>
-                t.literature.map((lit) => (
-                  <li
-                    key={`${t.target_id}-${lit.pubmed_id}`}
-                    className="flex flex-col gap-1"
-                  >
-                    <p className="text-sm font-medium leading-snug text-foreground">
+            {targetsWithLiterature.length > 0 ? (
+              <div className="flex flex-col gap-5">
+                {targetsWithLiterature.map((t) => (
+                  <div key={t.target_id} className="flex flex-col gap-2">
+                    <p className="font-mono text-sm font-semibold text-foreground">
                       {t.symbol}
-                      {lit.year ? ` (${lit.year})` : ""}
+                      <span className="ml-2 font-sans text-xs font-normal text-muted-foreground">
+                        Rank #{t.rank}
+                      </span>
                     </p>
-                    {lit.pubmed_id && (
-                      <a
-                        href={`https://pubmed.ncbi.nlm.nih.gov/${lit.pubmed_id}/`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        PubMed ID: {lit.pubmed_id}
-                      </a>
-                    )}
-                  </li>
-                )),
-              )}
-            </ul>
+                    <ul className="flex flex-col gap-2 border-l border-border pl-4">
+                      {t.literature.map((lit) => (
+                        <li
+                          key={`${t.target_id}-${lit.pubmed_id}`}
+                          className="flex flex-col gap-0.5"
+                        >
+                          <p className="text-sm leading-snug text-muted-foreground">
+                            {lit.year ? `Published ${lit.year}` : "Publication"}
+                          </p>
+                          {lit.pubmed_id && (
+                            <a
+                              href={`https://pubmed.ncbi.nlm.nih.gov/${lit.pubmed_id}/`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              PubMed ID: {lit.pubmed_id}
+                            </a>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                No linked publications were returned for this target set.
+              </p>
+            )}
           </section>
         </CardContent>
       </Card>

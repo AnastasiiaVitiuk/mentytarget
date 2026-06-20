@@ -40,8 +40,10 @@ from app.schemas import (
 from app.pipeline.features import DATATYPES
 
 # How many top-ranked targets to fetch literature evidence for.
-# Kept small because each one is an extra OpenTargets API call.
-LITERATURE_TOP_N = 5
+# 0 (or any value <= 0) means "all returned targets". The lookups run
+# concurrently (see fetch_literature_for_targets), so covering the full set
+# keeps every target's references available in the report.
+LITERATURE_TOP_N = 0
 LITERATURE_PER_TARGET = 3
 
 
@@ -100,9 +102,11 @@ async def _run_pipeline(req: ScoreRequest) -> ScoreResponse:
     # 6. Explanation generation
     explanations = explain_frame(df)
 
-    # 6b. Literature evidence for the top-N targets only (extra API calls, kept small)
+    # 6b. Literature evidence for the targets (extra API calls, run concurrently).
+    # LITERATURE_TOP_N <= 0 means fetch literature for every returned target.
+    lit_count = len(df) if LITERATURE_TOP_N <= 0 else min(LITERATURE_TOP_N, len(df))
     top_pairs = [
-        (df.iloc[i]["target_id"], disease_id) for i in range(min(LITERATURE_TOP_N, len(df)))
+        (df.iloc[i]["target_id"], disease_id) for i in range(lit_count)
     ]
     literature_by_target: dict[str, list[dict]] = {}
     if top_pairs:
