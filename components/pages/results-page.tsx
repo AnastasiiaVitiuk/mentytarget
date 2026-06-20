@@ -67,6 +67,14 @@ export function ResultsPage() {
             {usedProprietaryData && (
               <Badge variant="outline">+ proprietary data</Badge>
             )}
+            {result.model === "demo-fallback" && (
+              <Badge
+                variant="outline"
+                className="border-chart-3/40 text-chart-3"
+              >
+                Demo data
+              </Badge>
+            )}
           </div>
         </div>
       </div>
