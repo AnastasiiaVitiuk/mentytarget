@@ -1,0 +1,69 @@
+"use client"
+
+import { Search, FileText, Settings, Dna } from "lucide-react"
+
+import { useApp, type Page } from "@/components/app-store"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar"
+
+const navItems: { title: string; page: Page; icon: typeof Search }[] = [
+  { title: "Search", page: "search", icon: Search },
+  { title: "Reports", page: "reports", icon: FileText },
+  { title: "Settings", page: "settings", icon: Settings },
+]
+
+export function AppSidebar() {
+  const { page, navigate } = useApp()
+
+  return (
+    <Sidebar>
+      <SidebarHeader className="border-b border-sidebar-border">
+        <div className="flex items-center gap-2 px-2 py-3">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Dna className="size-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold leading-tight text-sidebar-foreground">
+              Targetly
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Target Discovery
+            </span>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Platform</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    isActive={page === item.page}
+                    tooltip={item.title}
+                    onClick={() => navigate(item.page)}
+                  >
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  )
+}
