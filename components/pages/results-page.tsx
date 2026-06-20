@@ -5,7 +5,7 @@ import { FileText, Lock, Sparkles } from "lucide-react"
 
 import { useApp } from "@/components/app-store"
 import { DocumentView } from "@/components/document-view"
-import { RelatedPapers } from "@/components/related-papers"
+// import { RelatedPapers } from "@/components/related-papers"
 import { TargetTable } from "@/components/target-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -49,7 +49,7 @@ export function ResultsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-foreground text-xl font-semibold tracking-tight">
-            {result.disease}
+            {result.disease_label}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{result.targets.length} targets</Badge>
@@ -84,7 +84,7 @@ export function ResultsPage() {
             </CardContent>
           </Card>
 
-          <RelatedPapers papers={result.papers} />
+          {/* <RelatedPapers papers={result.papers} /> */}
 
           <div className="flex justify-end">
             <Button size="lg" onClick={handleGenerate}>
