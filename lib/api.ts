@@ -20,6 +20,12 @@ export interface FeatureContribution {
   contribution: number
 }
 
+export interface LiteratureEvidence {
+  pubmed_id: string | null
+  score: number | null
+  year: number | null
+}
+
 export interface RankedTarget {
   rank: number
   target_id: string
@@ -31,6 +37,7 @@ export interface RankedTarget {
   evidence: EvidenceItem[]
   explanation: string
   top_contributions: FeatureContribution[]
+  literature: LiteratureEvidence[]
 }
 
 export interface ScoreResponse {

@@ -1,3 +1,5 @@
+import { ExternalLink } from "lucide-react"
+
 import { Badge } from "@/components/ui/badge"
 import {
   Table,
@@ -12,16 +14,20 @@ import type { RankedTarget } from "@/lib/api"
 
 function ScoreBar({ score }: { score: number }) {
   const tone =
-    score >= 0.85 ? "bg-chart-1" : score >= 0.7 ? "bg-chart-2" : "bg-chart-3"
+    score >= 0.85
+      ? "bg-chart-1"
+      : score >= 0.7
+        ? "bg-chart-2"
+        : "bg-chart-3"
   return (
     <div className="flex items-center gap-3">
-      <div className="bg-muted h-2 w-28 overflow-hidden rounded-full">
+      <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
         <div
           className={cn("h-full rounded-full", tone)}
           style={{ width: `${Math.round(score * 100)}%` }}
         />
       </div>
-      <span className="text-foreground font-mono text-sm tabular-nums">
+      <span className="font-mono text-sm tabular-nums text-foreground">
         {score.toFixed(2)}
       </span>
     </div>
@@ -42,13 +48,33 @@ function EvidenceBadges({ evidence }: { evidence: RankedTarget["evidence"] }) {
         <Badge
           key={e.datatype}
           variant="outline"
-          className={
-            evidenceStyles[e.datatype] ??
-            "bg-muted text-muted-foreground border-transparent"
-          }
+          className={evidenceStyles[e.datatype] ?? "border-transparent bg-muted text-muted-foreground"}
         >
           {e.datatype.replace(/_/g, " ")}
         </Badge>
+      ))}
+    </div>
+  )
+}
+
+function LiteratureLinks({ literature }: { literature: RankedTarget["literature"] }) {
+  if (!literature || literature.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      {literature.map((lit) => (
+        <a
+          key={lit.pubmed_id}
+          href={`https://pubmed.ncbi.nlm.nih.gov/${lit.pubmed_id}/`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1 text-xs text-primary hover:underline"
+        >
+          PMID {lit.pubmed_id}
+          {lit.year ? ` (${lit.year})` : ""}
+          <ExternalLink className="size-3" />
+        </a>
       ))}
     </div>
   )
@@ -62,10 +88,11 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="w-[30%]">Target</TableHead>
-            <TableHead className="w-[20%]">Score</TableHead>
-            <TableHead className="w-[15%]">Tractability</TableHead>
-            <TableHead className="w-[35%]">Evidence</TableHead>
+            <TableHead className="w-[22%]">Target</TableHead>
+            <TableHead className="w-[16%]">Score</TableHead>
+            <TableHead className="w-[12%]">Tractability</TableHead>
+            <TableHead className="w-[25%]">Evidence</TableHead>
+            <TableHead className="w-[25%]">Literature</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -73,10 +100,10 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
             <TableRow key={target.target_id}>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="text-foreground font-mono text-sm font-semibold">
+                  <span className="font-mono text-sm font-semibold text-foreground">
                     {target.symbol}
                   </span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-xs text-muted-foreground">
                     {target.name}
                   </span>
                 </div>
@@ -85,12 +112,15 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
                 <ScoreBar score={target.score} />
               </TableCell>
               <TableCell>
-                <span className="text-muted-foreground font-mono text-sm tabular-nums">
+                <span className="font-mono text-sm tabular-nums text-muted-foreground">
                   {target.tractability.toFixed(2)}
                 </span>
               </TableCell>
               <TableCell>
                 <EvidenceBadges evidence={target.evidence} />
+              </TableCell>
+              <TableCell>
+                <LiteratureLinks literature={target.literature} />
               </TableCell>
             </TableRow>
           ))}
