@@ -41,6 +41,12 @@ class FeatureContribution(BaseModel):
     contribution: float  # SHAP value (signed)
 
 
+class LiteratureEvidence(BaseModel):
+    pubmed_id: str | None = None
+    score: float | None = None
+    year: int | None = None
+
+
 class RankedTarget(BaseModel):
     rank: int
     target_id: str  # Ensembl gene id
@@ -52,6 +58,7 @@ class RankedTarget(BaseModel):
     evidence: list[EvidenceItem]
     explanation: str
     top_contributions: list[FeatureContribution]
+    literature: list[LiteratureEvidence] = Field(default_factory=list)
 
 
 class ScoreResponse(BaseModel):

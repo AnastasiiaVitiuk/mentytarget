@@ -16,7 +16,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from app.data.opentargets import fetch_associated_targets, resolve_disease
+from app.data.opentargets import (
+    fetch_associated_targets,
+    fetch_literature_for_targets,
+    resolve_disease,
+)
 from app.model.explain import explain_frame
 from app.model.ranker import ranker
 from app.pipeline.features import build_feature_frame
@@ -25,6 +29,7 @@ from app.schemas import (
     DiseaseHit,
     EvidenceItem,
     FeatureContribution,
+    LiteratureEvidence,
     Modality,
     RankedTarget,
     ReportRequest,
@@ -33,6 +38,11 @@ from app.schemas import (
     ScoreResponse,
 )
 from app.pipeline.features import DATATYPES
+
+# How many top-ranked targets to fetch literature evidence for.
+# Kept small because each one is an extra OpenTargets API call.
+LITERATURE_TOP_N = 5
+LITERATURE_PER_TARGET = 3
 
 
 @asynccontextmanager
@@ -90,6 +100,20 @@ async def _run_pipeline(req: ScoreRequest) -> ScoreResponse:
     # 6. Explanation generation
     explanations = explain_frame(df)
 
+    # 6b. Literature evidence for the top-N targets only (extra API calls, kept small)
+    top_pairs = [
+        (df.iloc[i]["target_id"], disease_id) for i in range(min(LITERATURE_TOP_N, len(df)))
+    ]
+    literature_by_target: dict[str, list[dict]] = {}
+    if top_pairs:
+        try:
+            literature_by_target = await fetch_literature_for_targets(
+                top_pairs, size=LITERATURE_PER_TARGET
+            )
+        except Exception:
+            # Literature is a nice-to-have; never fail the whole request for it.
+            literature_by_target = {}
+
     # 7. Assemble dashboard payload
     targets: list[RankedTarget] = []
     for i, row in df.iterrows():
@@ -97,6 +121,7 @@ async def _run_pipeline(req: ScoreRequest) -> ScoreResponse:
             EvidenceItem(datatype=dt, score=float(row[dt])) for dt in DATATYPES if row[dt] > 0
         ]
         exp = explanations[i]
+        lit_rows = literature_by_target.get(row["target_id"], [])
         targets.append(
             RankedTarget(
                 rank=i + 1,
@@ -109,6 +134,7 @@ async def _run_pipeline(req: ScoreRequest) -> ScoreResponse:
                 evidence=evidence,
                 explanation=exp["explanation"],
                 top_contributions=[FeatureContribution(**c) for c in exp["top_contributions"]],
+                literature=[LiteratureEvidence(**lr) for lr in lit_rows],
             )
         )
 
