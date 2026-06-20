@@ -25,26 +25,19 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   fetchDrugDetail,
   fetchKnownDrugs,
+  stageLabel,
+  stageRank,
   type DrugDetail,
   type KnownDrug,
 } from "@/lib/opentargets"
 import { cn } from "@/lib/utils"
 
-function phaseLabel(phase: number | null): string {
-  if (phase == null) return "Unknown"
-  if (phase >= 4) return "Approved"
-  if (phase >= 3) return "Phase III"
-  if (phase >= 2) return "Phase II"
-  if (phase >= 1) return "Phase I"
-  if (phase > 0) return "Early Phase"
-  return "Preclinical"
-}
-
-function phaseTone(phase: number | null): string {
-  if (phase == null) return "border-transparent bg-muted text-muted-foreground"
-  if (phase >= 4) return "border-transparent bg-chart-1/15 text-chart-1"
-  if (phase >= 2) return "border-transparent bg-chart-2/15 text-chart-2"
-  return "border-transparent bg-chart-3/15 text-chart-3"
+function stageTone(stage: string | null): string {
+  const rank = stageRank(stage)
+  if (rank >= 4.5) return "border-transparent bg-chart-1/15 text-chart-1"
+  if (rank >= 3) return "border-transparent bg-chart-2/15 text-chart-2"
+  if (rank > 0) return "border-transparent bg-chart-3/15 text-chart-3"
+  return "border-transparent bg-muted text-muted-foreground"
 }
 
 function DrugDetailBody({ chemblId }: { chemblId: string }) {
@@ -74,11 +67,10 @@ function DrugDetailBody({ chemblId }: { chemblId: string }) {
   return (
     <div className="flex flex-col gap-5 px-4 pb-8">
       <div className="flex flex-wrap gap-2">
-        <Badge className={phaseTone(data.maximumClinicalTrialPhase)}>
-          {phaseLabel(data.maximumClinicalTrialPhase)}
+        <Badge className={stageTone(data.maximumClinicalStage)}>
+          {stageLabel(data.maximumClinicalStage)}
         </Badge>
         {data.drugType && <Badge variant="secondary">{data.drugType}</Badge>}
-        {data.isApproved && <Badge variant="outline">Approved</Badge>}
         {data.hasBeenWithdrawn && (
           <Badge variant="outline" className="text-chart-3">
             Withdrawn
@@ -185,8 +177,8 @@ function DrugRow({
           {drug.mechanismOfAction ?? drug.drugType ?? "Investigational compound"}
         </span>
       </div>
-      <Badge className={cn("shrink-0", phaseTone(drug.phase))}>
-        {phaseLabel(drug.phase)}
+      <Badge className={cn("shrink-0", stageTone(drug.stage))}>
+        {stageLabel(drug.stage)}
       </Badge>
       <ChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
     </button>

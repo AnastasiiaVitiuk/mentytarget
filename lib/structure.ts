@@ -34,8 +34,24 @@ interface UniProtResult {
   comments?: UniProtComment[]
 }
 
-function alphaFoldPdbUrl(accession: string): string {
-  return `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-model_v4.pdb`
+/**
+ * Resolves the exact AlphaFold PDB URL via its prediction API (the file
+ * version is no longer stable, e.g. model_v4 -> model_v6). Falls back to a
+ * direct v6 URL if the API is unavailable.
+ */
+async function resolveAlphaFoldPdbUrl(accession: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://alphafold.ebi.ac.uk/api/prediction/${accession}`,
+    )
+    if (res.ok) {
+      const data: { pdbUrl?: string }[] = await res.json()
+      if (data?.[0]?.pdbUrl) return data[0].pdbUrl
+    }
+  } catch {
+    /* fall through to default */
+  }
+  return `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-model_v6.pdb`
 }
 
 export async function fetchProteinInfo(symbol: string): Promise<ProteinInfo> {
@@ -67,13 +83,15 @@ export async function fetchProteinInfo(symbol: string): Promise<ProteinInfo> {
   )
   const functionText = functionComment?.texts?.[0]?.value ?? null
 
+  const pdbUrl = await resolveAlphaFoldPdbUrl(accession)
+
   return {
     accession,
     proteinName,
     geneSymbol: symbol,
     functionText,
     sequenceLength: entry.sequence?.length ?? null,
-    pdbUrl: alphaFoldPdbUrl(accession),
+    pdbUrl,
     alphaFoldUrl: `https://alphafold.ebi.ac.uk/entry/${accession}`,
     uniProtUrl: `https://www.uniprot.org/uniprotkb/${accession}/entry`,
   }
