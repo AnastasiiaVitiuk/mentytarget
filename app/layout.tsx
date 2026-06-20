@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Synapse — AI Target Identification for Psychiatric Disorders",
+  title: "MentyTarget — AI Target Identification for Psychiatric Disorders",
   description:
     "AI-powered target identification for psychiatric disorders. Search a disease and analyze proprietary RNA-seq, differential expression, or proteomics data.",
   generator: "v0.app",

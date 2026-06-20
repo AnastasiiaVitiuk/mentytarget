@@ -34,7 +34,7 @@ export function AppSidebar() {
           </div>
           <div className="flex flex-col">
             <span className="text-sidebar-foreground text-base leading-tight font-semibold">
-              Targetly
+              MentyTarget
             </span>
             <span className="text-muted-foreground text-xs">
               Target Discovery
