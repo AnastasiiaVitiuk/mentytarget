@@ -5,7 +5,12 @@
  * Set NEXT_PUBLIC_API_URL in .env.local (defaults to localhost:8000 for dev).
  */
 
+import { searchDisease, type DiseaseResult, type Resource } from "./targets-data"
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+/** Forces the bundled demo dataset regardless of backend availability. */
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
 
 export type Modality = "small_molecule" | "antibody" | "protac" | "other"
 
@@ -101,14 +106,75 @@ export async function scoreTargetsWithFile(
   return res.json()
 }
 
+const RESOURCE_TO_DATATYPE: Record<Resource, string> = {
+  GWAS: "genetic_association",
+  Transcriptomics: "rna_expression",
+  Literature: "literature",
+}
+
+/**
+ * Builds a ScoreResponse from the bundled sample dataset so the app is fully
+ * navigable without the FastAPI backend (e.g. on a static Vercel deployment).
+ * The interactive 3D viewer and suggested-drugs panels still call the live
+ * UniProt / AlphaFold / Open Targets APIs — only the ranking step is mocked.
+ */
+export function buildDemoResponse(
+  query: string,
+  modality: Modality,
+): ScoreResponse {
+  const data: DiseaseResult = searchDisease(query)
+
+  const targets: RankedTarget[] = data.targets.map((t, i) => ({
+    rank: i + 1,
+    // Not an Ensembl id; Open Targets resolves the real id from the symbol.
+    target_id: `DEMO_${t.symbol}`,
+    symbol: t.symbol,
+    name: t.name,
+    score: t.score,
+    overall_association: Number(Math.min(1, t.score + 0.02).toFixed(2)),
+    tractability: Number((0.4 + t.score * 0.5).toFixed(2)),
+    evidence: [{ datatype: RESOURCE_TO_DATATYPE[t.resource], score: t.score }],
+    explanation: `${t.symbol} is prioritized for ${data.disease} based on ${t.resource} evidence with an association score of ${t.score.toFixed(2)}.`,
+    top_contributions: [
+      {
+        feature: RESOURCE_TO_DATATYPE[t.resource],
+        value: t.score,
+        contribution: Number((t.score * 0.6).toFixed(2)),
+      },
+    ],
+    literature: [],
+  }))
+
+  return {
+    disease_query: query,
+    disease_id: "DEMO",
+    disease_label: data.disease,
+    modality,
+    model: "demo-fallback",
+    targets,
+  }
+}
+
 export async function runAnalysisRequest(
   disease: string,
   modality: Modality,
   file: File | null,
   topK = 25,
 ): Promise<ScoreResponse> {
-  if (file) return scoreTargetsWithFile(disease, modality, file, topK)
-  return scoreTargets(disease, modality, topK)
+  if (DEMO_MODE) return buildDemoResponse(disease, modality)
+
+  try {
+    if (file) return await scoreTargetsWithFile(disease, modality, file, topK)
+    return await scoreTargets(disease, modality, topK)
+  } catch (err) {
+    // A non-ApiError means the backend was unreachable (connection/CORS/DNS
+    // failure) rather than a real error response — fall back to demo data so
+    // the deployed app stays fully explorable.
+    if (!(err instanceof ApiError)) {
+      return buildDemoResponse(disease, modality)
+    }
+    throw err
+  }
 }
 
 export async function downloadReportPdf(

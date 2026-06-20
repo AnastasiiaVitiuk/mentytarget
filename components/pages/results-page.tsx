@@ -6,7 +6,9 @@ import { FileText, Lock, Sparkles } from "lucide-react"
 import { useApp } from "@/components/app-store"
 import { DocumentView } from "@/components/document-view"
 // import { RelatedPapers } from "@/components/related-papers"
+import { TargetDetail } from "@/components/target-detail"
 import { TargetTable } from "@/components/target-table"
+import type { RankedTarget } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +29,7 @@ export function ResultsPage() {
     navigate,
   } = useApp()
   const [tab, setTab] = React.useState(documentReady ? "document" : "raw")
+  const [selected, setSelected] = React.useState<RankedTarget | null>(null)
 
   function handleGenerate() {
     generateDocument()
@@ -44,6 +47,14 @@ export function ResultsPage() {
     )
   }
 
+  if (selected) {
+    return (
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+        <TargetDetail target={selected} onBack={() => setSelected(null)} />
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -55,6 +66,14 @@ export function ResultsPage() {
             <Badge variant="secondary">{result.targets.length} targets</Badge>
             {usedProprietaryData && (
               <Badge variant="outline">+ proprietary data</Badge>
+            )}
+            {result.model === "demo-fallback" && (
+              <Badge
+                variant="outline"
+                className="border-chart-3/40 text-chart-3"
+              >
+                Demo data
+              </Badge>
             )}
           </div>
         </div>
@@ -75,12 +94,13 @@ export function ResultsPage() {
               <div className="flex flex-col gap-1">
                 <CardTitle>Prioritized Targets</CardTitle>
                 <CardDescription>
-                  Ranked by association score, highest first
+                  Ranked by association score, highest first. Select a target to
+                  explore its 3D structure and suggested drugs.
                 </CardDescription>
               </div>
             </CardHeader>
             <CardContent>
-              <TargetTable targets={result.targets} />
+              <TargetTable targets={result.targets} onSelect={setSelected} />
             </CardContent>
           </Card>
 

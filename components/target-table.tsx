@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react"
+import { ChevronRight, ExternalLink } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -69,6 +69,7 @@ function LiteratureLinks({ literature }: { literature: RankedTarget["literature"
           href={`https://pubmed.ncbi.nlm.nih.gov/${lit.pubmed_id}/`}
           target="_blank"
           rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
           className="flex items-center gap-1 text-xs text-primary hover:underline"
         >
           PMID {lit.pubmed_id}
@@ -80,7 +81,13 @@ function LiteratureLinks({ literature }: { literature: RankedTarget["literature"
   )
 }
 
-export function TargetTable({ targets }: { targets: RankedTarget[] }) {
+export function TargetTable({
+  targets,
+  onSelect,
+}: {
+  targets: RankedTarget[]
+  onSelect?: (target: RankedTarget) => void
+}) {
   const sorted = [...targets].sort((a, b) => b.score - a.score)
 
   return (
@@ -89,15 +96,31 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="w-[22%]">Target</TableHead>
-            <TableHead className="w-[16%]">Score</TableHead>
-            <TableHead className="w-[12%]">Tractability</TableHead>
-            <TableHead className="w-[25%]">Evidence</TableHead>
-            <TableHead className="w-[25%]">Literature</TableHead>
+            <TableHead className="w-[15%]">Score</TableHead>
+            <TableHead className="w-[11%]">Tractability</TableHead>
+            <TableHead className="w-[23%]">Evidence</TableHead>
+            <TableHead className="w-[22%]">Literature</TableHead>
+            <TableHead className="w-[7%]" aria-label="Open detail" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {sorted.map((target) => (
-            <TableRow key={target.target_id}>
+            <TableRow
+              key={target.target_id}
+              onClick={() => onSelect?.(target)}
+              tabIndex={onSelect ? 0 : undefined}
+              role={onSelect ? "button" : undefined}
+              onKeyDown={(e) => {
+                if (onSelect && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault()
+                  onSelect(target)
+                }
+              }}
+              className={cn(
+                onSelect &&
+                  "cursor-pointer transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none",
+              )}
+            >
               <TableCell>
                 <div className="flex flex-col">
                   <span className="font-mono text-sm font-semibold text-foreground">
@@ -121,6 +144,11 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
               </TableCell>
               <TableCell>
                 <LiteratureLinks literature={target.literature} />
+              </TableCell>
+              <TableCell>
+                {onSelect && (
+                  <ChevronRight className="size-4 text-muted-foreground" />
+                )}
               </TableCell>
             </TableRow>
           ))}
