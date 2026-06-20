@@ -14,10 +14,10 @@ export function SettingsPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">
+        <h2 className="text-foreground text-xl font-semibold tracking-tight">
           Settings
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Manage your account and subscription.
         </p>
       </div>
@@ -29,15 +29,15 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-muted-foreground">Name</span>
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-muted-foreground text-sm">Name</span>
+            <span className="text-foreground text-sm font-medium">
               Dr. Alex Morgan
             </span>
           </div>
           <Separator />
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm text-muted-foreground">Email</span>
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-muted-foreground text-sm">Email</span>
+            <span className="text-foreground text-sm font-medium">
               a.morgan@neurolab.org
             </span>
           </div>
@@ -51,10 +51,10 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-foreground text-sm font-medium">
               Professional
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               Unlimited analyses · Document generation · Priority compute
             </span>
           </div>

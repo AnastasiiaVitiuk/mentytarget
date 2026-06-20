@@ -2,10 +2,7 @@
 
 import * as React from "react"
 
-import {
-  searchDisease,
-  type DiseaseResult,
-} from "@/lib/targets-data"
+import { searchDisease, type DiseaseResult } from "@/lib/targets-data"
 
 export type Page = "search" | "results" | "reports" | "settings"
 
@@ -51,21 +48,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [usedProprietaryData, setUsedProprietaryData] = React.useState(false)
   const [documentReady, setDocumentReady] = React.useState(false)
   const [savedReports, setSavedReports] = React.useState<SavedReport[]>([])
-  const [activeReportId, setActiveReportId] = React.useState<string | null>(null)
+  const [activeReportId, setActiveReportId] = React.useState<string | null>(
+    null,
+  )
 
   const navigate = React.useCallback((next: Page) => setPage(next), [])
 
-  const runAnalysis = React.useCallback(
-    (query: string, file: File | null) => {
-      const next = searchDisease(query)
-      setResult(next)
-      setUsedProprietaryData(Boolean(file))
-      setDocumentReady(false)
-      setActiveReportId(null)
-      setPage("results")
-    },
-    [],
-  )
+  const runAnalysis = React.useCallback((query: string, file: File | null) => {
+    const next = searchDisease(query)
+    setResult(next)
+    setUsedProprietaryData(Boolean(file))
+    setDocumentReady(false)
+    setActiveReportId(null)
+    setPage("results")
+  }, [])
 
   const generateDocument = React.useCallback(() => {
     setDocumentReady(true)

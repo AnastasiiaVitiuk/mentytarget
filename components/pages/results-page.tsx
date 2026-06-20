@@ -36,7 +36,7 @@ export function ResultsPage() {
   if (!result) {
     return (
       <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 py-16 text-center">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           No analysis yet. Start by searching a disease.
         </p>
         <Button onClick={() => navigate("search")}>Go to Search</Button>
@@ -48,7 +48,7 @@ export function ResultsPage() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+          <h2 className="text-foreground text-xl font-semibold tracking-tight">
             {result.disease}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
@@ -100,14 +100,14 @@ export function ResultsPage() {
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-                <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-full">
                   <FileText className="size-6" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-foreground text-sm font-medium">
                     No document generated yet
                   </p>
-                  <p className="max-w-sm text-sm text-muted-foreground">
+                  <p className="text-muted-foreground max-w-sm text-sm">
                     Generate a narrative report from the Raw Data tab to
                     synthesize targets and literature into a shareable document.
                   </p>

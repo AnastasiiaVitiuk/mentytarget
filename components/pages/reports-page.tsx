@@ -13,10 +13,10 @@ export function ReportsPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">
+        <h2 className="text-foreground text-xl font-semibold tracking-tight">
           Saved Reports
         </h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Documents you have generated and saved from your analyses.
         </p>
       </div>
@@ -24,14 +24,14 @@ export function ReportsPage() {
       {savedReports.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-full">
               <FolderOpen className="size-6" />
             </div>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-medium text-foreground">
+              <p className="text-foreground text-sm font-medium">
                 No saved reports yet
               </p>
-              <p className="max-w-sm text-sm text-muted-foreground">
+              <p className="text-muted-foreground max-w-sm text-sm">
                 Run an analysis, generate a document, and save it to find it
                 here.
               </p>
@@ -44,15 +44,15 @@ export function ReportsPage() {
           {savedReports.map((report) => (
             <Card key={report.id}>
               <CardContent className="flex items-center gap-4 py-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
                   <FileText className="size-5" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <p className="truncate text-sm font-medium text-foreground">
+                  <p className="text-foreground truncate text-sm font-medium">
                     {report.disease}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {formatDate(report.generatedAt)}
                     </span>
                     <Badge variant="secondary">

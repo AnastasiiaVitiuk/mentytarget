@@ -25,18 +25,18 @@ export function RelatedPapers({ papers }: { papers: Paper[] }) {
             <li
               key={paper.title}
               className={
-                index > 0 ? "border-t border-border pt-4 mt-4" : undefined
+                index > 0 ? "border-border mt-4 border-t pt-4" : undefined
               }
             >
               <div className="flex gap-3">
-                <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
+                <div className="bg-accent text-accent-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md">
                   <FileText className="size-4" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <p className="text-sm font-medium leading-snug text-foreground text-pretty">
+                  <p className="text-foreground text-sm leading-snug font-medium text-pretty">
                     {paper.title}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {paper.journal} · {paper.year}
                   </p>
                   <div className="flex flex-wrap gap-1.5">

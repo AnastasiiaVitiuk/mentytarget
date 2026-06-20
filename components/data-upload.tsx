@@ -29,15 +29,17 @@ export function DataUpload({
 
   if (file) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/60 p-4">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <div className="border-border bg-secondary/60 flex items-center gap-3 rounded-xl border p-4">
+        <div className="bg-primary/10 text-primary flex size-10 shrink-0 items-center justify-center rounded-lg">
           <FileSpreadsheetIcon className="size-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-foreground">
+          <p className="text-foreground truncate text-sm font-medium">
             {file.name}
           </p>
-          <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
+          <p className="text-muted-foreground text-xs">
+            {formatBytes(file.size)}
+          </p>
         </div>
         <Button
           type="button"
@@ -77,21 +79,21 @@ export function DataUpload({
         handleFiles(e.dataTransfer.files)
       }}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-input bg-secondary/30 px-6 py-10 text-center transition-colors outline-none hover:border-primary/50 hover:bg-accent/40 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40",
-        isDragging && "border-primary bg-accent/50"
+        "border-input bg-secondary/30 hover:border-primary/50 hover:bg-accent/40 focus-visible:border-primary focus-visible:ring-ring/40 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors outline-none focus-visible:ring-2",
+        isDragging && "border-primary bg-accent/50",
       )}
     >
-      <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <div className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-full">
         <UploadCloudIcon className="size-6" />
       </div>
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-foreground">
+        <p className="text-foreground text-sm font-medium">
           Drop your CSV here, or{" "}
           <span className="text-primary underline-offset-2 hover:underline">
             browse
           </span>
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           RNA-seq, differential expression, or proteomics data (.csv)
         </p>
       </div>

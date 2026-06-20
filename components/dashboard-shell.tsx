@@ -39,13 +39,13 @@ export function DashboardShell() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card/60 px-4 backdrop-blur md:px-6">
+        <header className="border-border bg-card/60 sticky top-0 z-10 flex h-16 shrink-0 items-center gap-3 border-b px-4 backdrop-blur md:px-6">
           <SidebarTrigger />
           <div className="flex flex-col">
-            <h1 className="text-sm font-semibold leading-tight text-foreground">
+            <h1 className="text-foreground text-sm leading-tight font-semibold">
               {header.title}
             </h1>
-            <p className="text-xs text-muted-foreground">{header.subtitle}</p>
+            <p className="text-muted-foreground text-xs">{header.subtitle}</p>
           </div>
         </header>
         <main className="flex-1 p-4 md:p-6 lg:p-8">
