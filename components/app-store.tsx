@@ -2,7 +2,11 @@
 
 import * as React from "react"
 
-import { runAnalysisRequest, type Modality, type ScoreResponse } from "@/lib/api"
+import {
+  runAnalysisRequest,
+  type Modality,
+  type ScoreResponse,
+} from "@/lib/api"
 
 export type Page = "search" | "results" | "reports" | "settings"
 
@@ -52,7 +56,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [analysisError, setAnalysisError] = React.useState<string | null>(null)
   const [documentReady, setDocumentReady] = React.useState(false)
   const [savedReports, setSavedReports] = React.useState<SavedReport[]>([])
-  const [activeReportId, setActiveReportId] = React.useState<string | null>(null)
+  const [activeReportId, setActiveReportId] = React.useState<string | null>(
+    null,
+  )
 
   const navigate = React.useCallback((next: Page) => setPage(next), [])
 
@@ -71,7 +77,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         })
         .catch((err) => {
           setAnalysisError(
-            err instanceof Error ? err.message : "Something went wrong. Please try again.",
+            err instanceof Error
+              ? err.message
+              : "Something went wrong. Please try again.",
           )
         })
         .finally(() => {

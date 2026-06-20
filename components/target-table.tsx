@@ -12,20 +12,16 @@ import type { RankedTarget } from "@/lib/api"
 
 function ScoreBar({ score }: { score: number }) {
   const tone =
-    score >= 0.85
-      ? "bg-chart-1"
-      : score >= 0.7
-        ? "bg-chart-2"
-        : "bg-chart-3"
+    score >= 0.85 ? "bg-chart-1" : score >= 0.7 ? "bg-chart-2" : "bg-chart-3"
   return (
     <div className="flex items-center gap-3">
-      <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
+      <div className="bg-muted h-2 w-28 overflow-hidden rounded-full">
         <div
           className={cn("h-full rounded-full", tone)}
           style={{ width: `${Math.round(score * 100)}%` }}
         />
       </div>
-      <span className="font-mono text-sm tabular-nums text-foreground">
+      <span className="text-foreground font-mono text-sm tabular-nums">
         {score.toFixed(2)}
       </span>
     </div>
@@ -46,7 +42,10 @@ function EvidenceBadges({ evidence }: { evidence: RankedTarget["evidence"] }) {
         <Badge
           key={e.datatype}
           variant="outline"
-          className={evidenceStyles[e.datatype] ?? "border-transparent bg-muted text-muted-foreground"}
+          className={
+            evidenceStyles[e.datatype] ??
+            "bg-muted text-muted-foreground border-transparent"
+          }
         >
           {e.datatype.replace(/_/g, " ")}
         </Badge>
@@ -74,10 +73,10 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
             <TableRow key={target.target_id}>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="font-mono text-sm font-semibold text-foreground">
+                  <span className="text-foreground font-mono text-sm font-semibold">
                     {target.symbol}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {target.name}
                   </span>
                 </div>
@@ -86,7 +85,7 @@ export function TargetTable({ targets }: { targets: RankedTarget[] }) {
                 <ScoreBar score={target.score} />
               </TableCell>
               <TableCell>
-                <span className="font-mono text-sm tabular-nums text-muted-foreground">
+                <span className="text-muted-foreground font-mono text-sm tabular-nums">
                   {target.tractability.toFixed(2)}
                 </span>
               </TableCell>
