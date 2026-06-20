@@ -37,10 +37,10 @@ export function SearchPage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-2 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight text-balance text-foreground">
+        <h2 className="text-foreground text-2xl font-semibold tracking-tight text-balance">
           Identify therapeutic targets for psychiatric disorders
         </h2>
-        <p className="text-pretty text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm text-pretty">
           Search a disease to surface AI-prioritized targets, ranked by
           multi-omic evidence and supporting literature.
         </p>
@@ -50,7 +50,7 @@ export function SearchPage() {
         <CardContent className="flex flex-col gap-5 pt-6">
           <form onSubmit={submit} className="flex flex-col gap-3">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -66,7 +66,7 @@ export function SearchPage() {
                   key={example}
                   type="button"
                   onClick={() => setQuery(example)}
-                  className="rounded-full border border-border bg-secondary/50 px-3 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:border-primary/40 hover:bg-accent"
+                  className="border-border bg-secondary/50 text-secondary-foreground hover:border-primary/40 hover:bg-accent rounded-full border px-3 py-1 text-xs font-medium transition-colors"
                 >
                   {example}
                 </button>
@@ -78,18 +78,18 @@ export function SearchPage() {
                 render={
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-secondary/40 px-4 py-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-accent/50"
+                    className="border-border bg-secondary/40 text-foreground hover:bg-accent/50 flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-medium transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <FlaskConical className="size-4 text-primary" />
+                      <FlaskConical className="text-primary size-4" />
                       Add your own proprietary data
-                      <span className="text-xs font-normal text-muted-foreground">
+                      <span className="text-muted-foreground text-xs font-normal">
                         (optional)
                       </span>
                     </span>
                     <ChevronDown
                       className={cn(
-                        "size-4 text-muted-foreground transition-transform",
+                        "text-muted-foreground size-4 transition-transform",
                         open && "rotate-180",
                       )}
                     />

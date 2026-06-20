@@ -42,12 +42,12 @@ This writes `models/ranker.joblib`, which the API auto-loads on next start.
 
 ## Key endpoints
 
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/resolve-disease?q=Alzheimer` | name → EFO/MONDO id |
-| POST | `/score-targets` | full pipeline → ranked targets |
-| POST | `/score-targets-with-file` | same, with proprietary CSV upload |
-| POST | `/report` | download ranking as PDF |
+| Method | Path                           | Purpose                           |
+| ------ | ------------------------------ | --------------------------------- |
+| GET    | `/resolve-disease?q=Alzheimer` | name → EFO/MONDO id               |
+| POST   | `/score-targets`               | full pipeline → ranked targets    |
+| POST   | `/score-targets-with-file`     | same, with proprietary CSV upload |
+| POST   | `/report`                      | download ranking as PDF           |
 
 ### Example request
 

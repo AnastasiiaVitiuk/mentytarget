@@ -27,16 +27,16 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border">
+      <SidebarHeader className="border-sidebar-border border-b">
         <div className="flex items-center gap-2 px-2 py-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-lg">
             <Dna className="size-5" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-semibold leading-tight text-sidebar-foreground">
+            <span className="text-sidebar-foreground text-base leading-tight font-semibold">
               Targetly
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               Target Discovery
             </span>
           </div>
