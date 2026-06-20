@@ -5,6 +5,7 @@ import { ArrowLeft, Atom, ExternalLink, Loader2 } from "lucide-react"
 
 import { ProteinViewer } from "@/components/protein-viewer"
 import { SuggestedDrugs } from "@/components/suggested-drugs"
+import { TargetLiterature } from "@/components/target-literature"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -172,9 +173,11 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 export function TargetDetail({
   target,
+  disease,
   onBack,
 }: {
   target: RankedTarget
+  disease?: string
   onBack: () => void
 }) {
   return (
@@ -219,6 +222,12 @@ export function TargetDetail({
       <Card>
         <CardContent className="pt-6">
           <SuggestedDrugs symbol={target.symbol} targetId={target.target_id} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6">
+          <TargetLiterature symbol={target.symbol} disease={disease} />
         </CardContent>
       </Card>
     </div>
