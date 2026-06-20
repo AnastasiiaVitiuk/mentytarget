@@ -49,14 +49,14 @@ export function ResultsPage() {
 
   if (selected) {
     return (
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <TargetDetail target={selected} onBack={() => setSelected(null)} />
       </div>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="text-foreground text-xl font-semibold tracking-tight">
