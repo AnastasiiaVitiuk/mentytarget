@@ -41,12 +41,14 @@ interface EpmcResult {
  */
 function cleanTitle(raw: string): string {
   return raw
-    .replace(/<[^>]+>/g, "")
+    // Decode entities first so encoded markup (e.g. &lt;i&gt;) becomes real
+    // tags, then strip all tags in a single pass.
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&#39;|&apos;/g, "'")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .replace(/\.$/, "")
     .trim()

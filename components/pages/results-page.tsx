@@ -19,6 +19,14 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export function ResultsPage() {
   const {
@@ -30,6 +38,34 @@ export function ResultsPage() {
   } = useApp()
   const [tab, setTab] = React.useState(documentReady ? "document" : "raw")
   const [selected, setSelected] = React.useState<RankedTarget | null>(null)
+  const [topN, setTopN] = React.useState("50")
+
+  const totalTargets = result?.targets.length ?? 0
+
+  // Build the "Show top N" options from what's actually available, capped at
+  // the fetched pool size. "all" always reflects the full result set.
+  const topNOptions = React.useMemo(() => {
+    const presets = [10, 25, 50, 100]
+    return presets.filter((n) => n < totalTargets)
+  }, [totalTargets])
+
+  // If the current selection isn't a valid option (e.g. a disease with fewer
+  // targets than the default 50), fall back to showing all.
+  const effectiveTopN =
+    topN === "all" || topNOptions.includes(Number(topN)) ? topN : "all"
+
+  // Slice client-side so changing N is instant (no re-fetch). Both the table
+  // and the generated document consume this same sliced list.
+  const visibleTargets = React.useMemo(() => {
+    if (!result) return []
+    if (effectiveTopN === "all") return result.targets
+    return result.targets.slice(0, Number(effectiveTopN))
+  }, [result, effectiveTopN])
+
+  const slicedResult = React.useMemo(
+    () => (result ? { ...result, targets: visibleTargets } : result),
+    [result, visibleTargets],
+  )
 
   function handleGenerate() {
     generateDocument()
@@ -67,7 +103,11 @@ export function ResultsPage() {
             {result.disease_label}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{result.targets.length} targets</Badge>
+            <Badge variant="secondary">
+              {visibleTargets.length === totalTargets
+                ? `${totalTargets} targets`
+                : `Top ${visibleTargets.length} of ${totalTargets} targets`}
+            </Badge>
             {usedProprietaryData && (
               <Badge variant="outline">+ proprietary data</Badge>
             )}
@@ -94,7 +134,7 @@ export function ResultsPage() {
 
         <TabsContent value="raw" className="flex flex-col gap-6 pt-2">
           <Card>
-            <CardHeader className="flex-row items-center justify-between gap-4">
+            <CardHeader className="flex-row flex-wrap items-center justify-between gap-4">
               <div className="flex flex-col gap-1">
                 <CardTitle>Prioritized Targets</CardTitle>
                 <CardDescription>
@@ -102,10 +142,35 @@ export function ResultsPage() {
                   explore its 3D structure and suggested drugs.
                 </CardDescription>
               </div>
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="topn-select"
+                  className="text-muted-foreground text-sm whitespace-nowrap"
+                >
+                  Show top
+                </Label>
+                <Select value={effectiveTopN} onValueChange={setTopN}>
+                  <SelectTrigger id="topn-select" className="h-9 w-28">
+                    <SelectValue>
+                      {(value: string) =>
+                        value === "all" ? `All (${totalTargets})` : value
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {topNOptions.map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="all">All ({totalTargets})</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <TargetTable
-                targets={result.targets}
+                targets={visibleTargets}
                 disease={result.disease_label}
                 onSelect={setSelected}
               />
@@ -124,7 +189,7 @@ export function ResultsPage() {
 
         <TabsContent value="document" className="pt-2">
           {documentReady ? (
-            <DocumentView result={result} />
+            <DocumentView result={slicedResult!} />
           ) : (
             <Card>
               <CardContent className="flex flex-col items-center gap-4 py-16 text-center">

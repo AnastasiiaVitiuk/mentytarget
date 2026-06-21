@@ -238,7 +238,7 @@ export async function runAnalysisRequest(
   disease: string,
   modality: Modality,
   file: File | null,
-  topK = 50,
+  topK = 100,
 ): Promise<ScoreResponse> {
   if (DEMO_MODE) return buildDemoResponse(disease, modality)
 
