@@ -57,11 +57,12 @@ class TargetRanker:
         """Return a ranking score per row (higher = better target)."""
         if df.empty:
             return np.array([])
-        X = df[FEATURE_COLUMNS].to_numpy(dtype=float)
 
         if self._model is not None:
-            raw = self._model.predict(X)
+            # Pass a named DataFrame so feature names match those seen at fit time.
+            raw = self._model.predict(df[FEATURE_COLUMNS].astype(float))
         else:
+            X = df[FEATURE_COLUMNS].to_numpy(dtype=float)
             w = np.array([_FALLBACK_WEIGHTS.get(c, 0.0) for c in FEATURE_COLUMNS])
             # n_evidence_types is on a 0..7 scale; squash it before weighting.
             X_adj = X.copy()

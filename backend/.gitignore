@@ -3,4 +3,7 @@ __pycache__/
 *.pyc
 .env
 models/*.joblib
+# The trained production ranker MUST ship with the deploy so the API loads
+# the real LightGBM model instead of the weighted fallback.
+!models/ranker.joblib
 .DS_Store

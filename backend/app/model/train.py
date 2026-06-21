@@ -52,7 +52,9 @@ async def _collect(disease_ids: list[str], modality: str) -> tuple[pd.DataFrame,
 
 def train(disease_ids: list[str], modality: str = "small_molecule") -> None:
     data, groups = asyncio.run(_collect(disease_ids, modality))
-    X = data[FEATURE_COLUMNS].to_numpy(dtype=float)
+    # Fit with a named DataFrame so the model stores feature names; inference
+    # then passes the same named columns and avoids sklearn name-mismatch warnings.
+    X = data[FEATURE_COLUMNS].astype(float)
     y = data["__label"].to_numpy(dtype=int)
 
     model = lgb.LGBMRanker(
