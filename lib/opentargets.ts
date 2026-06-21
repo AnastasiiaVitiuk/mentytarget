@@ -70,6 +70,136 @@ export function stageLabel(stage: string | null): string {
   }
 }
 
+/** Maps the app modality enum to Open Targets tractability modality codes. */
+const MODALITY_TO_OT: Record<string, string> = {
+  small_molecule: "SM",
+  antibody: "AB",
+  protac: "PR",
+  other: "OC",
+}
+
+export interface AssociatedTarget {
+  ensemblId: string
+  symbol: string
+  name: string
+  score: number
+  datatypeScores: { id: string; score: number }[]
+  tractabilityScore: number
+}
+
+export interface DiseaseAssociations {
+  efoId: string
+  diseaseLabel: string
+  count: number
+  targets: AssociatedTarget[]
+}
+
+/** Resolves a free-text disease query to an EFO id via the search index. */
+async function resolveEfoId(
+  query: string,
+): Promise<{ id: string; name: string }> {
+  const data = await gql<{
+    search: { hits: { id: string; name: string; entity: string }[] }
+  }>(
+    `query ResolveDisease($q: String!) {
+      search(queryString: $q, entityNames: ["disease"], page: { index: 0, size: 1 }) {
+        hits { id name entity }
+      }
+    }`,
+    { q: query },
+  )
+  const hit =
+    data.search.hits.find((h) => h.entity === "disease") ?? data.search.hits[0]
+  if (!hit) throw new Error(`No disease found for "${query}"`)
+  return { id: hit.id, name: hit.name }
+}
+
+/**
+ * Fetches the top disease-associated targets directly from the public Open
+ * Targets Platform — the live ranking source used in place of the optional
+ * FastAPI backend. Each target carries its datatype evidence scores and a
+ * modality-aware tractability proxy.
+ */
+export async function fetchAssociatedTargets(
+  query: string,
+  modality: string,
+  size = 50,
+): Promise<DiseaseAssociations> {
+  const disease = await resolveEfoId(query)
+  const otModality = MODALITY_TO_OT[modality] ?? "SM"
+
+  const data = await gql<{
+    disease: {
+      id: string
+      name: string
+      associatedTargets: {
+        count: number
+        rows: {
+          score: number
+          target: {
+            id: string
+            approvedSymbol: string
+            approvedName: string
+            tractability:
+              | { label: string; modality: string; value: boolean }[]
+              | null
+          } | null
+          datatypeScores: { id: string; score: number }[]
+        }[]
+      } | null
+    } | null
+  }>(
+    `query Assoc($efoId: String!, $size: Int!) {
+      disease(efoId: $efoId) {
+        id
+        name
+        associatedTargets(page: { index: 0, size: $size }) {
+          count
+          rows {
+            score
+            target {
+              id
+              approvedSymbol
+              approvedName
+              tractability { label modality value }
+            }
+            datatypeScores { id score }
+          }
+        }
+      }
+    }`,
+    { efoId: disease.id, size },
+  )
+
+  const rows = data.disease?.associatedTargets?.rows ?? []
+  const targets: AssociatedTarget[] = rows
+    .filter((r) => r.target)
+    .map((r) => {
+      const buckets = (r.target!.tractability ?? []).filter(
+        (t) => t.modality === otModality,
+      )
+      const tractabilityScore =
+        buckets.length > 0
+          ? buckets.filter((b) => b.value).length / buckets.length
+          : 0
+      return {
+        ensemblId: r.target!.id,
+        symbol: r.target!.approvedSymbol,
+        name: r.target!.approvedName,
+        score: r.score,
+        datatypeScores: r.datatypeScores ?? [],
+        tractabilityScore: Number(tractabilityScore.toFixed(2)),
+      }
+    })
+
+  return {
+    efoId: disease.id,
+    diseaseLabel: data.disease?.name ?? query,
+    count: data.disease?.associatedTargets?.count ?? targets.length,
+    targets,
+  }
+}
+
 export interface KnownDrug {
   drugId: string
   prefName: string

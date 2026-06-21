@@ -35,6 +35,23 @@ interface EpmcResult {
   doi?: string
 }
 
+/**
+ * Europe PMC titles can contain inline markup (e.g. <i>…</i>) and HTML
+ * entities. Strip tags and decode the common entities for clean display.
+ */
+function cleanTitle(raw: string): string {
+  return raw
+    .replace(/<[^>]+>/g, "")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/\s+/g, " ")
+    .replace(/\.$/, "")
+    .trim()
+}
+
 function articleUrl(r: EpmcResult): string {
   if (r.source && r.id) {
     return `https://europepmc.org/article/${r.source}/${r.id}`
@@ -76,7 +93,7 @@ export async function fetchTargetLiterature(
       id: r.id ?? r.pmid ?? r.title!,
       source: r.source ?? "MED",
       pmid: r.pmid ?? null,
-      title: r.title!.replace(/\.$/, ""),
+      title: cleanTitle(r.title!),
       authors: r.authorString ?? null,
       journal: r.journalTitle ?? null,
       year: r.pubYear ?? null,

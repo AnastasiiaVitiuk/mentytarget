@@ -6,6 +6,7 @@
  */
 
 import { searchDisease, type DiseaseResult, type Resource } from "./targets-data"
+import { fetchAssociatedTargets } from "./opentargets"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -155,25 +156,109 @@ export function buildDemoResponse(
   }
 }
 
+/** Human-readable labels for Open Targets datatype evidence ids. */
+const DATATYPE_LABELS: Record<string, string> = {
+  genetic_association: "Genetic association",
+  somatic_mutation: "Somatic mutation",
+  known_drug: "Known drug",
+  affected_pathway: "Affected pathway",
+  literature: "Literature",
+  rna_expression: "RNA expression",
+  animal_model: "Animal model",
+}
+
+/**
+ * Builds a ScoreResponse from live Open Targets disease→target associations.
+ * This is the default ranking source: it needs no backend, returns the full
+ * set of associated targets, and carries real evidence + tractability so the
+ * results are genuine raw data rather than the bundled demo dataset.
+ */
+async function buildLiveResponse(
+  query: string,
+  modality: Modality,
+  topK: number,
+): Promise<ScoreResponse> {
+  const { efoId, diseaseLabel, targets: assoc } = await fetchAssociatedTargets(
+    query,
+    modality,
+    topK,
+  )
+  if (assoc.length === 0) throw new Error("No associated targets")
+
+  const targets: RankedTarget[] = assoc.map((t) => {
+    const sorted = [...t.datatypeScores].sort((a, b) => b.score - a.score)
+    const top = sorted.slice(0, 3)
+    const topLabel = top[0]
+      ? (DATATYPE_LABELS[top[0].id] ?? top[0].id).toLowerCase()
+      : "association evidence"
+    // Blend association strength with modality tractability for the final score.
+    const score = Number((t.score * 0.8 + t.tractabilityScore * 0.2).toFixed(3))
+    return {
+      rank: 0,
+      target_id: t.ensemblId,
+      symbol: t.symbol,
+      name: t.name,
+      score,
+      overall_association: Number(t.score.toFixed(3)),
+      tractability: t.tractabilityScore,
+      evidence: sorted.map((d) => ({
+        datatype: d.id,
+        score: Number(d.score.toFixed(3)),
+      })),
+      explanation: `${t.symbol} is associated with ${diseaseLabel} (overall association ${t.score.toFixed(
+        2,
+      )}), driven primarily by ${topLabel} evidence. Tractability for the selected modality scores ${t.tractabilityScore.toFixed(
+        2,
+      )}.`,
+      top_contributions: top.map((d) => ({
+        feature: DATATYPE_LABELS[d.id] ?? d.id,
+        value: Number(d.score.toFixed(3)),
+        contribution: Number((d.score * t.score).toFixed(3)),
+      })),
+      literature: [],
+    }
+  })
+
+  targets.sort((a, b) => b.score - a.score)
+  targets.forEach((t, i) => {
+    t.rank = i + 1
+  })
+
+  return {
+    disease_query: query,
+    disease_id: efoId,
+    disease_label: diseaseLabel,
+    modality,
+    model: "opentargets-live",
+    targets,
+  }
+}
+
 export async function runAnalysisRequest(
   disease: string,
   modality: Modality,
   file: File | null,
-  topK = 25,
+  topK = 50,
 ): Promise<ScoreResponse> {
   if (DEMO_MODE) return buildDemoResponse(disease, modality)
 
-  try {
-    if (file) return await scoreTargetsWithFile(disease, modality, file, topK)
-    return await scoreTargets(disease, modality, topK)
-  } catch (err) {
-    // A non-ApiError means the backend was unreachable (connection/CORS/DNS
-    // failure) rather than a real error response — fall back to demo data so
-    // the deployed app stays fully explorable.
-    if (!(err instanceof ApiError)) {
-      return buildDemoResponse(disease, modality)
+  // When proprietary data is supplied, prefer the FastAPI backend (the only
+  // path that can score a custom CSV). If it's unreachable, fall through to
+  // the live Open Targets ranking so results still render.
+  if (file) {
+    try {
+      return await scoreTargetsWithFile(disease, modality, file, topK)
+    } catch (err) {
+      if (err instanceof ApiError) throw err
     }
-    throw err
+  }
+
+  // Default path: live Open Targets associations — real data, no backend.
+  try {
+    return await buildLiveResponse(disease, modality, topK)
+  } catch {
+    // Absolute last resort so the UI is never empty.
+    return buildDemoResponse(disease, modality)
   }
 }
 
