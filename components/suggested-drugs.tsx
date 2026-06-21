@@ -153,6 +153,42 @@ function DrugDetailBody({ chemblId }: { chemblId: string }) {
   )
 }
 
+function FilterChip({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string
+  count: number
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+        active
+          ? "border-transparent bg-primary text-primary-foreground"
+          : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
+      )}
+    >
+      {label}
+      <span
+        className={cn(
+          "tabular-nums",
+          active ? "text-primary-foreground/80" : "text-muted-foreground/70",
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  )
+}
+
 function DrugRow({
   drug,
   onClick,
@@ -185,6 +221,15 @@ function DrugRow({
   )
 }
 
+// Stage buckets used by the category filter, ordered most → least advanced.
+const STAGE_FILTERS: { key: string; label: string; stages: string[] }[] = [
+  { key: "approved", label: "Approved", stages: ["APPROVAL", "PHASE_4"] },
+  { key: "phase_3", label: "Phase III", stages: ["PHASE_3"] },
+  { key: "phase_2", label: "Phase II", stages: ["PHASE_2"] },
+  { key: "phase_1", label: "Phase I", stages: ["PHASE_1", "EARLY_PHASE_1"] },
+  { key: "preclinical", label: "Preclinical", stages: ["PRECLINICAL"] },
+]
+
 export function SuggestedDrugs({
   symbol,
   targetId,
@@ -197,6 +242,26 @@ export function SuggestedDrugs({
     () => fetchKnownDrugs(symbol, targetId),
   )
   const [openDrug, setOpenDrug] = React.useState<KnownDrug | null>(null)
+  const [activeFilter, setActiveFilter] = React.useState<string>("all")
+
+  // Only show filter chips for categories that actually have compounds.
+  const availableFilters = React.useMemo(() => {
+    if (!data) return []
+    return STAGE_FILTERS.filter((f) =>
+      data.drugs.some((d) => f.stages.includes(d.stage ?? "")),
+    ).map((f) => ({
+      ...f,
+      count: data.drugs.filter((d) => f.stages.includes(d.stage ?? "")).length,
+    }))
+  }, [data])
+
+  const visibleDrugs = React.useMemo(() => {
+    if (!data) return []
+    if (activeFilter === "all") return data.drugs
+    const filter = STAGE_FILTERS.find((f) => f.key === activeFilter)
+    if (!filter) return data.drugs
+    return data.drugs.filter((d) => filter.stages.includes(d.stage ?? ""))
+  }, [data, activeFilter])
 
   return (
     <section className="flex flex-col gap-3">
@@ -215,8 +280,29 @@ export function SuggestedDrugs({
       </div>
       <p className="text-sm text-muted-foreground">
         Clinically tested and approved compounds acting on {symbol}, sourced
-        from the Open Targets Platform. Select one to learn more.
+        from the Open Targets Platform. Filter by development stage or select
+        one to learn more.
       </p>
+
+      {data && data.drugs.length > 0 && availableFilters.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip
+            label="All"
+            count={data.drugs.length}
+            active={activeFilter === "all"}
+            onClick={() => setActiveFilter("all")}
+          />
+          {availableFilters.map((f) => (
+            <FilterChip
+              key={f.key}
+              label={f.label}
+              count={f.count}
+              active={activeFilter === f.key}
+              onClick={() => setActiveFilter(f.key)}
+            />
+          ))}
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex flex-col gap-2">
@@ -239,9 +325,9 @@ export function SuggestedDrugs({
         </p>
       )}
 
-      {data && data.drugs.length > 0 && (
+      {data && data.drugs.length > 0 && visibleDrugs.length > 0 && (
         <div className="flex flex-col gap-2">
-          {data.drugs.map((drug) => (
+          {visibleDrugs.map((drug) => (
             <DrugRow
               key={drug.drugId}
               drug={drug}
@@ -249,6 +335,12 @@ export function SuggestedDrugs({
             />
           ))}
         </div>
+      )}
+
+      {data && data.drugs.length > 0 && visibleDrugs.length === 0 && (
+        <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          No compounds match this stage. Try a different category.
+        </p>
       )}
 
       <Sheet

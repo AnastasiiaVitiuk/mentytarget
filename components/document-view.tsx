@@ -1,6 +1,7 @@
 "use client"
 
-import { Check, Download, FileText, Save } from "lucide-react"
+import * as React from "react"
+import { Check, Download, FileText, Loader2, Save } from "lucide-react"
 
 import { useApp } from "@/components/app-store"
 import { Badge } from "@/components/ui/badge"
@@ -12,11 +13,40 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { downloadReportPdf } from "@/lib/api"
+import { Skeleton } from "@/components/ui/skeleton"
 import type { ScoreResponse } from "@/lib/api"
+import { stageLabel } from "@/lib/opentargets"
+import {
+  buildReportData,
+  downloadReportHtml,
+  type TargetReportSection,
+} from "@/lib/report"
 
 export function DocumentView({ result }: { result: ScoreResponse }) {
   const { saveCurrentReport, activeReportId } = useApp()
+  const [sections, setSections] = React.useState<TargetReportSection[] | null>(
+    null,
+  )
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    let active = true
+    setLoading(true)
+    buildReportData(result)
+      .then((data) => {
+        if (active) setSections(data)
+      })
+      .catch((err) => {
+        console.error("Failed to build report data:", err)
+        if (active) setSections([])
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [result])
 
   const top = [...result.targets].sort((a, b) => b.score - a.score).slice(0, 3)
   const topNames = top.map((t) => t.symbol)
@@ -25,24 +55,12 @@ export function DocumentView({ result }: { result: ScoreResponse }) {
     Math.max(result.targets.length, 1)
   const topEvidenceType = mostCommonEvidence(result.targets)
 
-  async function handleDownload() {
-    try {
-      const blob = await downloadReportPdf(
-        result.disease_label,
-        result.modality,
-        result.targets,
-      )
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `mentytarget_${result.disease_label.replace(/\s+/g, "_")}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (err) {
-      console.error("Failed to download report:", err)
-    }
+  const totalDrugs = sections?.reduce((s, x) => s + x.drugs.length, 0) ?? 0
+  const totalRefs = sections?.reduce((s, x) => s + x.literature.length, 0) ?? 0
+
+  function handleDownload() {
+    if (!sections) return
+    downloadReportHtml(result, sections)
   }
 
   return (
@@ -104,72 +122,41 @@ export function DocumentView({ result }: { result: ScoreResponse }) {
 
           <Separator />
 
-          {/* Top Targets */}
+          {/* Full target dossier */}
           <section className="flex flex-col gap-4">
-            <h3 className="text-base font-semibold text-foreground">
-              Top Targets
-            </h3>
-            <div className="flex flex-col gap-4">
-              {top.map((t, i) => (
-                <div key={t.target_id} className="flex flex-col gap-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-foreground">
-                      {i + 1}. {t.symbol}
-                    </span>
-                    {t.evidence.map((e) => (
-                      <Badge key={e.datatype} variant="outline">
-                        {e.datatype.replace(/_/g, " ")}
-                      </Badge>
-                    ))}
-                    <span className="ml-auto text-xs font-medium text-muted-foreground">
-                      Score {t.score.toFixed(2)}
-                    </span>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    <span className="font-medium text-foreground">{t.name}</span>{" "}
-                    {t.explanation}
-                  </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-semibold text-foreground">
+                Targets, Drugs &amp; Supporting Literature
+              </h3>
+              {sections && (
+                <div className="flex gap-2">
+                  <Badge variant="secondary">{sections.length} targets</Badge>
+                  <Badge variant="secondary">{totalDrugs} drugs</Badge>
+                  <Badge variant="secondary">{totalRefs} references</Badge>
                 </div>
-              ))}
-            </div>
-          </section>
-
-          <Separator />
-
-          {/* Supporting Literature */}
-          <section className="flex flex-col gap-4">
-            <h3 className="text-base font-semibold text-foreground">
-              Supporting Literature
-            </h3>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Key publications linking the top-ranked targets to{" "}
-              {result.disease_label}:
-            </p>
-            <ul className="flex flex-col gap-3">
-              {top.flatMap((t) =>
-                t.literature.map((lit) => (
-                  <li
-                    key={`${t.target_id}-${lit.pubmed_id}`}
-                    className="flex flex-col gap-1"
-                  >
-                    <p className="text-sm font-medium leading-snug text-foreground">
-                      {t.symbol}
-                      {lit.year ? ` (${lit.year})` : ""}
-                    </p>
-                    {lit.pubmed_id && (
-                      <a
-                        href={`https://pubmed.ncbi.nlm.nih.gov/${lit.pubmed_id}/`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        PubMed ID: {lit.pubmed_id}
-                      </a>
-                    )}
-                  </li>
-                )),
               )}
-            </ul>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Every prioritized target below is paired with its known compounds
+              (Open Targets) and the recent publications it draws on (Europe
+              PMC). The downloadable report contains this same full dossier.
+            </p>
+
+            {loading && (
+              <div className="flex flex-col gap-4">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-32 w-full rounded-lg" />
+                ))}
+              </div>
+            )}
+
+            {!loading && sections && (
+              <div className="flex flex-col gap-4">
+                {sections.map((s, i) => (
+                  <TargetDossier key={s.target.target_id} section={s} index={i} />
+                ))}
+              </div>
+            )}
           </section>
         </CardContent>
       </Card>
@@ -182,10 +169,20 @@ export function DocumentView({ result }: { result: ScoreResponse }) {
           <Button
             variant="outline"
             onClick={handleDownload}
+            disabled={loading || !sections}
             className="flex-1"
           >
-            <Download data-icon="inline-start" />
-            Download as PDF
+            {loading ? (
+              <>
+                <Loader2 data-icon="inline-start" className="animate-spin" />
+                Preparing full report…
+              </>
+            ) : (
+              <>
+                <Download data-icon="inline-start" />
+                Download full report
+              </>
+            )}
           </Button>
           <Button
             onClick={saveCurrentReport}
@@ -206,6 +203,103 @@ export function DocumentView({ result }: { result: ScoreResponse }) {
           </Button>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function TargetDossier({
+  section,
+  index,
+}: {
+  section: TargetReportSection
+  index: number
+}) {
+  const { target: t, drugs, literature } = section
+
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border bg-card px-4 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-sm font-semibold text-foreground">
+          {index + 1}. {t.symbol}
+        </span>
+        <span className="text-xs text-muted-foreground">{t.name}</span>
+        <span className="ml-auto text-xs font-medium text-muted-foreground">
+          Score {t.score.toFixed(2)}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-1">
+        {t.evidence.map((e) => (
+          <Badge key={e.datatype} variant="outline">
+            {e.datatype.replace(/_/g, " ")}
+          </Badge>
+        ))}
+      </div>
+
+      <p className="text-sm leading-relaxed text-muted-foreground">
+        {t.explanation}
+      </p>
+
+      <div className="flex flex-col gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-primary">
+          Suggested drugs ({drugs.length})
+        </h4>
+        {drugs.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {drugs.slice(0, 12).map((d) => (
+              <Badge
+                key={d.drugId}
+                variant="secondary"
+                className="font-normal"
+                title={d.mechanismOfAction ?? d.drugType ?? undefined}
+              >
+                {d.prefName}
+                <span className="ml-1 text-muted-foreground">
+                  · {stageLabel(d.stage)}
+                </span>
+              </Badge>
+            ))}
+            {drugs.length > 12 && (
+              <Badge variant="outline" className="font-normal">
+                +{drugs.length - 12} more
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No known drugs recorded — potential novel opportunity.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-primary">
+          Supporting literature ({literature.length})
+        </h4>
+        {literature.length > 0 ? (
+          <ol className="flex flex-col gap-1.5 pl-4">
+            {literature.map((l) => (
+              <li key={l.id} className="list-decimal text-sm text-muted-foreground">
+                <a
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  {l.title}
+                </a>
+                {l.journal ? ` — ${l.journal}` : ""}
+                {l.year ? ` (${l.year})` : ""}
+                {l.pmid ? ` · PMID ${l.pmid}` : ""}
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No indexed publications found for this target.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
