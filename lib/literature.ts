@@ -47,6 +47,7 @@ function articleUrl(r: EpmcResult): string {
 export async function fetchTargetLiterature(
   symbol: string,
   disease?: string,
+  limit = 8,
 ): Promise<LiteratureArticle[]> {
   // Restrict to gene-symbol mentions; add the disease term when available so
   // the results are relevant to the analysis context.
@@ -57,7 +58,7 @@ export async function fetchTargetLiterature(
 
   const url =
     `${EPMC_ENDPOINT}?query=${encodeURIComponent(query)}` +
-    `&format=json&pageSize=8&resultType=lite&sort=${encodeURIComponent(
+    `&format=json&pageSize=${limit}&resultType=lite&sort=${encodeURIComponent(
       "P_PDATE_D desc",
     )}`
 
