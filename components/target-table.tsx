@@ -1,6 +1,10 @@
+"use client"
+
 import { ChevronRight, ExternalLink } from "lucide-react"
+import useSWR from "swr"
 
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -11,6 +15,7 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import type { RankedTarget } from "@/lib/api"
+import { fetchTargetLiterature } from "@/lib/literature"
 
 function ScoreBar({ score }: { score: number }) {
   const tone =
@@ -57,24 +62,49 @@ function EvidenceBadges({ evidence }: { evidence: RankedTarget["evidence"] }) {
   )
 }
 
-function LiteratureLinks({ literature }: { literature: RankedTarget["literature"] }) {
-  if (!literature || literature.length === 0) {
+function LiteratureLinks({
+  symbol,
+  disease,
+}: {
+  symbol: string
+  disease?: string
+}) {
+  const { data, error, isLoading } = useSWR(
+    ["table-literature", symbol, disease ?? ""],
+    () => fetchTargetLiterature(symbol, disease, 2),
+    { revalidateOnFocus: false },
+  )
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-3 w-24" />
+      </div>
+    )
+  }
+
+  if (error || !data || data.length === 0) {
     return <span className="text-xs text-muted-foreground">—</span>
   }
+
   return (
-    <div className="flex flex-col gap-1">
-      {literature.map((lit) => (
+    <div className="flex flex-col gap-1.5">
+      {data.map((lit) => (
         <a
-          key={lit.pubmed_id}
-          href={`https://pubmed.ncbi.nlm.nih.gov/${lit.pubmed_id}/`}
+          key={lit.id}
+          href={lit.url}
           target="_blank"
           rel="noreferrer"
+          title={lit.title}
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 text-xs text-primary hover:underline"
+          className="flex items-start gap-1 text-xs text-primary hover:underline"
         >
-          PMID {lit.pubmed_id}
-          {lit.year ? ` (${lit.year})` : ""}
-          <ExternalLink className="size-3" />
+          <span className="line-clamp-1">
+            {lit.title}
+            {lit.year ? ` (${lit.year})` : ""}
+          </span>
+          <ExternalLink className="mt-0.5 size-3 shrink-0" />
         </a>
       ))}
     </div>
@@ -83,9 +113,11 @@ function LiteratureLinks({ literature }: { literature: RankedTarget["literature"
 
 export function TargetTable({
   targets,
+  disease,
   onSelect,
 }: {
   targets: RankedTarget[]
+  disease?: string
   onSelect?: (target: RankedTarget) => void
 }) {
   const sorted = [...targets].sort((a, b) => b.score - a.score)
@@ -143,7 +175,7 @@ export function TargetTable({
                 <EvidenceBadges evidence={target.evidence} />
               </TableCell>
               <TableCell>
-                <LiteratureLinks literature={target.literature} />
+                <LiteratureLinks symbol={target.symbol} disease={disease} />
               </TableCell>
               <TableCell>
                 {onSelect && (

@@ -104,7 +104,11 @@ export function ResultsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <TargetTable targets={result.targets} onSelect={setSelected} />
+              <TargetTable
+                targets={result.targets}
+                disease={result.disease_label}
+                onSelect={setSelected}
+              />
             </CardContent>
           </Card>
 
